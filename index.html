@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Football Lab — Sistema de Gestão</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- App Stylesheet -->
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ====================================================
+     TOAST NOTIFICATION CONTAINER
+==================================================== -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- ====================================================
+     GLOBAL LOADING OVERLAY
+==================================================== -->
+<div id="global-loader" class="global-loader hidden">
+    <div class="loader-spinner"></div>
+</div>
+
+<!-- ====================================================
+     LOGIN SCREEN
+==================================================== -->
+<div id="login-screen" class="login-screen hidden">
+    <!-- rendered by js/components/login.js -->
+</div>
+
+<!-- ====================================================
+     MAIN APP (post-auth)
+==================================================== -->
+<div id="app-screen" class="app-screen hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <div class="brand-icon"><i class="fa-solid fa-futbol"></i></div>
+                <span class="brand-name">Football<strong>Lab</strong></span>
+            </div>
+            <button id="sidebar-toggle" class="sidebar-toggle" title="Recolher menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <p class="nav-section-label">Menu</p>
+            <ul>
+                <li>
+                    <a href="#" class="nav-link" data-route="students">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Alunos</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-route="finance">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>Financeiro</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-route="schedule">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span>Grade Horária</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar"><i class="fa-solid fa-circle-user"></i></div>
+                <div class="user-details">
+                    <span id="user-email" class="user-email">—</span>
+                    <span class="user-role">Administrador</span>
+                </div>
+            </div>
+            <button id="logout-btn" class="logout-btn" title="Sair">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content" class="main-content">
+        <!-- Módulos renderizados aqui pelos componentes JS -->
+    </main>
+</div>
+
+<!-- ====================================================
+     MODAL OVERLAY (compartilhado)
+==================================================== -->
+<div id="modal-overlay" class="modal-overlay hidden">
+    <div id="modal-container" class="modal-container">
+        <!-- conteúdo injetado dinamicamente -->
+    </div>
+</div>
+
+<!-- ====================================================
+     SCRIPTS — ordem de dependência
+==================================================== -->
+<!-- 1. Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- 2. Supabase client init -->
+<script src="js/supabase-client.js"></script>
+
+<!-- 3. Data access layer -->
+<script src="js/api.js"></script>
+
+<!-- 4. Auth layer -->
+<script src="js/auth.js"></script>
+
+<!-- 5. UI Components -->
+<script src="js/components/login.js"></script>
+<script src="js/components/students.js"></script>
+<script src="js/components/finance.js"></script>
+<script src="js/components/schedule.js"></script>
+
+<!-- 6. SPA Controller (last — depends on everything above) -->
+<script src="js/app.js"></script>
+
+</body>
+</html>
