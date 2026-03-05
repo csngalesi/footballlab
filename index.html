@@ -41,6 +41,22 @@
 ==================================================== -->
 <div id="app-screen" class="app-screen hidden">
 
+    <!-- MOBILE TOPBAR (visível apenas em telas pequenas) -->
+    <div id="mobile-topbar" class="mobile-topbar">
+        <button id="mobile-menu-btn" class="mobile-menu-btn" title="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="brand">
+            <div class="brand-icon" style="width:32px;height:32px;font-size:.9rem;">
+                <i class="fa-solid fa-futbol"></i>
+            </div>
+            <span class="brand-name">Football<strong>Lab</strong></span>
+        </div>
+    </div>
+
+    <!-- BACKDROP (fecha o menu ao clicar fora, mobile) -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop hidden"></div>
+
     <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">

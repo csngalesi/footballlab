@@ -29,9 +29,9 @@
     --danger:         #ef4444;
     --info:           #3b82f6;
 
-    --sidebar-width:       260px;
-    --sidebar-width-mini:  72px;
-    --topbar-height:       0px;
+    --sidebar-width:         260px;
+    --sidebar-width-mini:    72px;
+    --mobile-topbar-height:  58px;
 
     --radius-sm:   6px;
     --radius:      10px;
@@ -943,20 +943,121 @@ tbody tr:hover td { background: var(--bg-hover); color: var(--text-primary); }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
 /* ============================================================
+   MOBILE TOPBAR
+   ============================================================ */
+.mobile-topbar {
+    display: none; /* oculto por padrão — só aparece via media query */
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--mobile-topbar-height);
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border);
+    z-index: 250;
+    align-items: center;
+    padding: 0 16px;
+    gap: 14px;
+}
+
+.mobile-menu-btn {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    width: 38px; height: 38px;
+    border-radius: var(--radius-sm);
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+.mobile-menu-btn:hover { background: var(--border); }
+
+/* ============================================================
+   SIDEBAR BACKDROP (mobile)
+   ============================================================ */
+.sidebar-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 290;
+    transition: opacity 0.25s ease;
+}
+.sidebar-backdrop.hidden { display: none; }
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
+
+/* ---- Desktop: sidebar sempre visível, colapsável ---- */
+@media (min-width: 769px) {
+    .mobile-topbar   { display: none !important; }
+    .sidebar-backdrop { display: none !important; }
+}
+
+/* ---- Mobile ---- */
 @media (max-width: 768px) {
-    .main-content { padding: 20px 16px; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .form-grid { grid-template-columns: 1fr; }
-    .sidebar { position: fixed; height: 100vh; z-index: 200; }
-    .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-width))); }
+    /* Topbar mobile visível */
+    .mobile-topbar { display: flex; }
+
+    /* Layout: coluna, deixa espaço para a topbar fixa */
     .app-screen { flex-direction: column; }
-    th, td { padding: 10px 14px; }
+
+    .main-content {
+        padding: calc(var(--mobile-topbar-height) + 20px) 16px 24px;
+        width: 100%;
+    }
+
+    /* Sidebar vira drawer: fica fora da tela por padrão */
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0;
+        height: 100dvh;
+        width: var(--sidebar-width) !important; /* sempre full-width quando aberta */
+        z-index: 300;
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        border-right: 1px solid var(--border-light);
+    }
+
+    /* Classe adicionada via JS quando menu está aberto */
+    .sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 4px 0 40px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Remove o colapso de desktop no mobile — não interfere */
+    .sidebar.collapsed { width: var(--sidebar-width) !important; transform: translateX(-100%); }
+    .sidebar.collapsed.mobile-open { transform: translateX(0); }
+
+    /* Garante que texto da sidebar apareça quando aberta */
+    .sidebar.mobile-open .brand-name,
+    .sidebar.mobile-open .nav-section-label,
+    .sidebar.mobile-open .nav-link span,
+    .sidebar.mobile-open .user-details {
+        opacity: 1; pointer-events: auto; width: auto; overflow: visible;
+    }
+
+    /* Oculta o toggle de desktop dentro da sidebar (mobile usa botão da topbar) */
+    .sidebar-toggle { display: none; }
+
+    /* Grids */
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid  { grid-template-columns: 1fr; }
+
+    /* Tabelas: scroll horizontal */
+    .table-wrapper { overflow-x: auto; }
+    th, td { padding: 10px 14px; white-space: nowrap; }
+
+    /* Schedule */
+    .schedule-wrapper { overflow-x: auto; }
+    .schedule-grid { min-width: 680px; }
 }
 
 @media (max-width: 480px) {
     .stats-grid { grid-template-columns: 1fr; }
-    .login-card { padding: 32px 24px; }
+    .login-card { padding: 32px 20px; }
     .page-header { flex-direction: column; align-items: flex-start; }
+    .page-header .btn { width: 100%; justify-content: center; }
+    .filter-bar { flex-direction: column; align-items: flex-start; }
+    .modal-container { max-width: 100%; margin: 0; border-radius: var(--radius) var(--radius) 0 0; }
+    .modal-overlay { align-items: flex-end; }
 }

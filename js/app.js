@@ -128,19 +128,37 @@
         // Sidebar
         // ----------------------------------------------------------
         _setupSidebar: function () {
-            // Toggle collapse
-            const toggleBtn = document.getElementById('sidebar-toggle');
             const sidebar   = document.getElementById('sidebar');
+            const backdrop  = document.getElementById('sidebar-backdrop');
+
+            // ---- Desktop: botão dentro da sidebar colapsa para mini ----
+            const toggleBtn = document.getElementById('sidebar-toggle');
             if (toggleBtn && sidebar) {
                 toggleBtn.addEventListener('click', function () {
                     sidebar.classList.toggle('collapsed');
                 });
             }
 
-            // Nav links
+            // ---- Mobile: botão da topbar abre o drawer ----
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            if (mobileMenuBtn && sidebar) {
+                mobileMenuBtn.addEventListener('click', function () {
+                    App._openMobileSidebar();
+                });
+            }
+
+            // Backdrop fecha o menu ao clicar fora
+            if (backdrop) {
+                backdrop.addEventListener('click', function () {
+                    App._closeMobileSidebar();
+                });
+            }
+
+            // Nav links — fechar sidebar no mobile ao navegar
             document.querySelectorAll('.nav-link[data-route]').forEach(link => {
                 link.addEventListener('click', function (e) {
                     e.preventDefault();
+                    if (App._isMobile()) App._closeMobileSidebar();
                     App.navigate(this.dataset.route);
                 });
             });
@@ -150,6 +168,31 @@
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', App._handleLogout);
             }
+
+            // Ao redimensionar: limpar estados inconsistentes
+            window.addEventListener('resize', function () {
+                if (!App._isMobile()) {
+                    App._closeMobileSidebar();
+                }
+            });
+        },
+
+        _isMobile: function () {
+            return window.innerWidth <= 768;
+        },
+
+        _openMobileSidebar: function () {
+            const sidebar  = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (sidebar)  sidebar.classList.add('mobile-open');
+            if (backdrop) backdrop.classList.remove('hidden');
+        },
+
+        _closeMobileSidebar: function () {
+            const sidebar  = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (sidebar)  sidebar.classList.remove('mobile-open');
+            if (backdrop) backdrop.classList.add('hidden');
         },
 
         // ----------------------------------------------------------
