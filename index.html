@@ -47,10 +47,7 @@
             <i class="fa-solid fa-bars"></i>
         </button>
         <div class="brand">
-            <div class="brand-icon" style="width:32px;height:32px;font-size:.9rem;">
-                <i class="fa-solid fa-futbol"></i>
-            </div>
-            <span class="brand-name">Football<strong>Lab</strong></span>
+            <span class="brand-name"><span class="brand-football">Football</span><span class="brand-lab">Lab</span></span>
         </div>
     </div>
 
@@ -61,8 +58,7 @@
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
             <div class="brand">
-                <div class="brand-icon"><i class="fa-solid fa-futbol"></i></div>
-                <span class="brand-name">Football<strong>Lab</strong></span>
+                <span class="brand-name"><span class="brand-football">Football</span><span class="brand-lab">Lab</span></span>
             </div>
             <button id="sidebar-toggle" class="sidebar-toggle" title="Recolher menu">
                 <i class="fa-solid fa-bars"></i>
@@ -79,15 +75,33 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link" data-route="finance">
-                        <i class="fa-solid fa-wallet"></i>
-                        <span>Financeiro</span>
-                    </a>
-                </li>
-                <li>
                     <a href="#" class="nav-link" data-route="schedule">
                         <i class="fa-solid fa-calendar-days"></i>
                         <span>Grade Horária</span>
+                    </a>
+                </li>
+            </ul>
+            <p class="nav-section-label">Financeiro</p>
+            <ul>
+                <li>
+                    <a href="#" class="nav-link" data-route="finance">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>Receitas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-route="expenses">
+                        <i class="fa-solid fa-circle-minus"></i>
+                        <span>Despesas</span>
+                    </a>
+                </li>
+            </ul>
+            <p class="nav-section-label">Sistema</p>
+            <ul>
+                <li>
+                    <a href="#" class="nav-link" data-route="parameters">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>Parâmetros</span>
                     </a>
                 </li>
             </ul>
@@ -104,6 +118,12 @@
             <button id="logout-btn" class="logout-btn" title="Sair">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
+        </div>
+
+        <!-- Deploy info — preenchido via version.json gerado no build do Vercel -->
+        <div class="deploy-info" id="deploy-info">
+            <i class="fa-solid fa-rocket"></i>
+            <span id="deploy-time">—</span>
         </div>
     </aside>
 
@@ -141,6 +161,8 @@
 <script src="js/components/login.js"></script>
 <script src="js/components/students.js"></script>
 <script src="js/components/finance.js"></script>
+<script src="js/components/expenses.js"></script>
+<script src="js/components/parameters.js"></script>
 <script src="js/components/schedule.js"></script>
 
 <!-- 6. SPA Controller (last — depends on everything above) -->

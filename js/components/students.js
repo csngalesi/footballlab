@@ -6,14 +6,21 @@
 (function () {
     'use strict';
 
-    // Cache local para evitar múltiplos fetches
-    let _students = [];
-    let _searchTerm = '';
+    let _students      = [];
+    let _enrollmentMap = {}; // { studentId: [{day, time}] }
+    let _finStatusMap  = {}; // { studentId: 'Pago'|'Pendente'|'Atrasado' }
+    let _searchTerm    = '';
+
+    const DAYS = { 1: 'Segunda', 2: 'Terça', 3: 'Quarta', 4: 'Quinta', 5: 'Sexta', 6: 'Sábado' };
+
+    const FIN_BADGE = {
+        'Pago':     '<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Pago</span>',
+        'Pendente': '<span class="badge badge-warning"><i class="fa-solid fa-clock"></i> Pendente</span>',
+        'Atrasado': '<span class="badge badge-danger"><i class="fa-solid fa-circle-exclamation"></i> Atrasado</span>',
+    };
 
     const StudentsComponent = {
-        /**
-         * Renderiza o módulo de alunos no #main-content.
-         */
+
         render: async function () {
             const content = document.getElementById('main-content');
             content.innerHTML = `
@@ -32,7 +39,6 @@
                     </button>
                 </div>
 
-                <!-- Stats -->
                 <div class="stats-grid" id="students-stats">
                     <div class="stat-card">
                         <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
@@ -43,7 +49,6 @@
                     </div>
                 </div>
 
-                <!-- Table -->
                 <div class="table-wrapper">
                     <div class="table-toolbar">
                         <span class="table-toolbar-title">Lista de Alunos</span>
@@ -83,7 +88,11 @@
         // ----------------------------------------------------------
         _loadStudents: async function () {
             try {
-                _students = await window.API.Students.getAll();
+                [_students, _enrollmentMap, _finStatusMap] = await Promise.all([
+                    window.API.Students.getAll(),
+                    window.API.Schedule.getAllEnrollmentsIndexedByStudent(),
+                    window.API.Finance.getLatestStatusByStudent(),
+                ]);
                 const statEl = document.getElementById('stat-total');
                 if (statEl) statEl.textContent = _students.length;
                 StudentsComponent._renderTable();
@@ -109,7 +118,8 @@
             const filtered = _searchTerm
                 ? _students.filter(s =>
                     s.full_name.toLowerCase().includes(_searchTerm) ||
-                    (s.phone || '').toLowerCase().includes(_searchTerm)
+                    (s.phone  || '').toLowerCase().includes(_searchTerm) ||
+                    (s.email  || '').toLowerCase().includes(_searchTerm)
                   )
                 : _students;
 
@@ -123,13 +133,25 @@
                 return;
             }
 
-            const rows = filtered.map(s => `
+            const rows = filtered.map(s => {
+                const slots    = _enrollmentMap[s.id] || [];
+                const slotsHtml = slots.length
+                    ? slots.map(sl =>
+                        `<span class="schedule-badge">${DAYS[sl.day] || sl.day} · ${sl.time}</span>`
+                      ).join('')
+                    : '<span class="text-muted">—</span>';
+
+                const finStatus = _finStatusMap[s.id];
+                const finHtml   = FIN_BADGE[finStatus] || '<span class="text-muted">—</span>';
+
+                return `
                 <tr>
                     <td class="td-name">${StudentsComponent._escape(s.full_name)}</td>
-                    <td>${StudentsComponent._escape(s.father_name || '—')}</td>
-                    <td>${StudentsComponent._escape(s.mother_name || '—')}</td>
                     <td>${StudentsComponent._escape(s.phone || '—')}</td>
-                    <td>${StudentsComponent._formatDate(s.created_at)}</td>
+                    <td>${StudentsComponent._formatDateBR(s.birth_date)}</td>
+                    <td>${StudentsComponent._calcAge(s.birth_date)}</td>
+                    <td>${finHtml}</td>
+                    <td class="td-schedule">${slotsHtml}</td>
                     <td class="td-actions">
                         <div style="display:flex;gap:6px;">
                             <button class="btn-icon edit" data-action="edit" data-id="${s.id}" title="Editar">
@@ -140,18 +162,19 @@
                             </button>
                         </div>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
 
             body.innerHTML = `
                 <table>
                     <thead>
                         <tr>
                             <th>Nome Completo</th>
-                            <th>Nome do Pai</th>
-                            <th>Nome da Mãe</th>
                             <th>Telefone</th>
-                            <th>Cadastrado em</th>
+                            <th>Nasc.</th>
+                            <th>Idade</th>
+                            <th>Sit.Fin.</th>
+                            <th>Horários</th>
                             <th class="td-actions">Ações</th>
                         </tr>
                     </thead>
@@ -159,7 +182,6 @@
                 </table>
             `;
 
-            // Delegated events
             body.querySelector('table').addEventListener('click', function (e) {
                 const btn = e.target.closest('[data-action]');
                 if (!btn) return;
@@ -176,6 +198,49 @@
             const student = studentId ? _students.find(s => s.id === studentId) : null;
             const isEdit  = !!student;
             const title   = isEdit ? 'Editar Aluno' : 'Novo Aluno';
+
+            const v = (field) => isEdit ? StudentsComponent._escape(student[field] || '') : '';
+
+            const phoneTypeOpts = ['Próprio', 'Responsável'].map(o =>
+                `<option value="${o}" ${isEdit && student.phone_type === o ? 'selected' : ''}>${o}</option>`
+            ).join('');
+
+            const emailTypeOpts = ['Próprio', 'Responsável'].map(o =>
+                `<option value="${o}" ${isEdit && student.email_type === o ? 'selected' : ''}>${o}</option>`
+            ).join('');
+
+            const extraFields = isEdit ? `
+                <div class="form-group">
+                    <label class="form-label">Tipo do Telefone</label>
+                    <select id="sf-phone-type" class="form-input form-select">
+                        <option value="">— selecione —</option>
+                        ${phoneTypeOpts}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-mail</label>
+                    <input type="email" id="sf-email" class="form-input"
+                        placeholder="email@exemplo.com"
+                        value="${v('email')}" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tipo do E-mail</label>
+                    <select id="sf-email-type" class="form-input form-select">
+                        <option value="">— selecione —</option>
+                        ${emailTypeOpts}
+                    </select>
+                </div>` : '';
+
+            const scheduleSection = isEdit ? `
+                <div class="form-group form-group-full">
+                    <label class="form-label">
+                        <i class="fa-solid fa-calendar-days" style="color:var(--brand-green);margin-right:5px;"></i>
+                        Horários Associados
+                    </label>
+                    <div id="sf-schedule" class="schedule-slots-display">
+                        <span style="font-size:.82rem;color:var(--text-muted);">Carregando…</span>
+                    </div>
+                </div>` : '';
 
             window.App.openModal(`
                 <div class="modal-header">
@@ -194,27 +259,52 @@
                                 <label class="form-label">Nome Completo *</label>
                                 <input type="text" id="sf-full-name" class="form-input"
                                     placeholder="Digite o nome completo"
-                                    value="${isEdit ? StudentsComponent._escape(student.full_name) : ''}"
+                                    value="${v('full_name')}"
                                     required />
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Nome do Pai</label>
                                 <input type="text" id="sf-father-name" class="form-input"
                                     placeholder="Nome do pai"
-                                    value="${isEdit ? StudentsComponent._escape(student.father_name || '') : ''}" />
+                                    value="${v('father_name')}" />
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Nome da Mãe</label>
                                 <input type="text" id="sf-mother-name" class="form-input"
                                     placeholder="Nome da mãe"
-                                    value="${isEdit ? StudentsComponent._escape(student.mother_name || '') : ''}" />
+                                    value="${v('mother_name')}" />
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Telefone</label>
                                 <input type="tel" id="sf-phone" class="form-input"
                                     placeholder="(00) 00000-0000"
-                                    value="${isEdit ? StudentsComponent._escape(student.phone || '') : ''}" />
+                                    value="${v('phone')}" />
                             </div>
+                            ${extraFields}
+                            <div class="form-group">
+                                <label class="form-label">Dia de Cobrança *</label>
+                                <input type="number" id="sf-billing-day" class="form-input"
+                                    placeholder="1 – 28" min="1" max="28"
+                                    value="${isEdit ? (student.billing_day || 10) : 10}" />
+                                <span class="form-hint">Dia do mês em que a mensalidade é gerada automaticamente.</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Data de Início</label>
+                                <input type="date" id="sf-start-date" class="form-input"
+                                    value="${isEdit && student.start_date ? student.start_date.substring(0,10) : ''}" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Data de Nascimento</label>
+                                <input type="date" id="sf-birth-date" class="form-input"
+                                    value="${isEdit && student.birth_date ? student.birth_date.substring(0,10) : ''}" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Idade</label>
+                                <input type="text" id="sf-age" class="form-input form-input-readonly"
+                                    placeholder="Calculada automaticamente" readonly
+                                    value="${isEdit && student.birth_date ? StudentsComponent._calcAge(student.birth_date) : ''}" />
+                            </div>
+                            ${scheduleSection}
                         </div>
                     </form>
                 </div>
@@ -233,7 +323,29 @@
                 await StudentsComponent._handleSave(studentId);
             });
 
+            document.getElementById('sf-birth-date').addEventListener('change', function () {
+                const ageEl = document.getElementById('sf-age');
+                if (ageEl) ageEl.value = StudentsComponent._calcAge(this.value);
+            });
+
             document.getElementById('sf-full-name').focus();
+
+            if (isEdit) {
+                StudentsComponent._fillScheduleModal(studentId);
+            }
+        },
+
+        _fillScheduleModal: function (studentId) {
+            const el = document.getElementById('sf-schedule');
+            if (!el) return;
+            const slots = _enrollmentMap[studentId] || [];
+            if (slots.length === 0) {
+                el.innerHTML = '<span style="font-size:.82rem;color:var(--text-muted);">Nenhum horário associado.</span>';
+            } else {
+                el.innerHTML = slots
+                    .map(sl => `<span class="schedule-badge schedule-badge-lg">${DAYS[sl.day] || sl.day}-feira · ${sl.time}</span>`)
+                    .join('');
+            }
         },
 
         // ----------------------------------------------------------
@@ -264,10 +376,21 @@
         },
 
         _handleSave: async function (editId) {
-            const fullName   = (document.getElementById('sf-full-name').value  || '').trim();
+            const fullName   = (document.getElementById('sf-full-name').value   || '').trim();
             const fatherName = (document.getElementById('sf-father-name').value || '').trim();
             const motherName = (document.getElementById('sf-mother-name').value || '').trim();
             const phone      = (document.getElementById('sf-phone').value       || '').trim();
+            const birthDate   = document.getElementById('sf-birth-date').value  || null;
+            const startDate   = document.getElementById('sf-start-date').value  || null;
+            const billingDay  = parseInt(document.getElementById('sf-billing-day').value) || 10;
+
+            // Campos exclusivos do modo edição
+            const phoneTypeEl = document.getElementById('sf-phone-type');
+            const emailEl     = document.getElementById('sf-email');
+            const emailTypeEl = document.getElementById('sf-email-type');
+            const phoneType   = phoneTypeEl ? (phoneTypeEl.value || null) : undefined;
+            const email       = emailEl     ? (emailEl.value.trim() || null) : undefined;
+            const emailType   = emailTypeEl ? (emailTypeEl.value || null) : undefined;
 
             if (!fullName) {
                 window.showToast('O nome completo é obrigatório.', 'warning');
@@ -277,10 +400,18 @@
 
             const payload = {
                 full_name:   fullName,
-                father_name: fatherName || null,
-                mother_name: motherName || null,
+                father_name: fatherName  || null,
+                mother_name: motherName  || null,
                 phone:       phone       || null,
+                birth_date:  birthDate   || null,
+                start_date:  startDate   || null,
+                billing_day: billingDay,
             };
+
+            // Adiciona campos de edição apenas se presentes no DOM
+            if (phoneType  !== undefined) payload.phone_type  = phoneType;
+            if (email      !== undefined) payload.email       = email;
+            if (emailType  !== undefined) payload.email_type  = emailType;
 
             const saveBtn = document.getElementById('modal-save-btn');
             saveBtn.disabled = true;
@@ -315,22 +446,28 @@
                 .replace(/"/g, '&quot;');
         },
 
-        _formatDate: function (iso) {
-            if (!iso) return '—';
-            const d = new Date(iso);
-            return d.toLocaleDateString('pt-BR');
+        _formatDateBR: function (val) {
+            if (!val) return '—';
+            const str = String(val).substring(0, 10);
+            const parts = str.split('-');
+            if (parts.length !== 3) return '—';
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
         },
 
-        /**
-         * Retorna os alunos em cache (usados por outros componentes).
-         */
+        _calcAge: function (birthDate) {
+            if (!birthDate) return '—';
+            const today = new Date();
+            const birth = new Date(String(birthDate).substring(0, 10) + 'T00:00:00');
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            return age >= 0 ? `${age} anos` : '—';
+        },
+
         getStudentsCache: function () {
             return _students;
         },
 
-        /**
-         * Recarrega a lista de alunos e atualiza o cache.
-         */
         refreshCache: async function () {
             try {
                 _students = await window.API.Students.getAll();

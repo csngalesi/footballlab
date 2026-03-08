@@ -8,9 +8,6 @@
 
     const db = () => window.supabaseClient;
 
-    // ----------------------------------------------------------
-    // Helpers
-    // ----------------------------------------------------------
     function handleError(context, error) {
         console.error(`[API:${context}]`, error);
         throw error;
@@ -20,9 +17,6 @@
     // STUDENTS
     // ----------------------------------------------------------
     const Students = {
-        /**
-         * Busca todos os alunos, ordenados por nome.
-         */
         getAll: async function () {
             const { data, error } = await db()
                 .from('students')
@@ -32,9 +26,6 @@
             return data;
         },
 
-        /**
-         * Busca um aluno pelo ID.
-         */
         getById: async function (id) {
             const { data, error } = await db()
                 .from('students')
@@ -45,10 +36,6 @@
             return data;
         },
 
-        /**
-         * Cria um novo aluno.
-         * @param {{ full_name: string, father_name: string, mother_name: string, phone: string }} payload
-         */
         create: async function (payload) {
             const { data, error } = await db()
                 .from('students')
@@ -59,9 +46,6 @@
             return data;
         },
 
-        /**
-         * Atualiza um aluno existente.
-         */
         update: async function (id, payload) {
             const { data, error } = await db()
                 .from('students')
@@ -73,9 +57,6 @@
             return data;
         },
 
-        /**
-         * Remove um aluno (cascade deleta pagamentos e matrículas).
-         */
         delete: async function (id) {
             const { error } = await db()
                 .from('students')
@@ -86,103 +67,141 @@
     };
 
     // ----------------------------------------------------------
-    // PAYMENTS
+    // PARAMETERS
     // ----------------------------------------------------------
-    const Payments = {
+    const Parameters = {
+        getAll: async function () {
+            const { data, error } = await db()
+                .from('parameters')
+                .select('*');
+            if (error) handleError('Parameters.getAll', error);
+            return data || [];
+        },
+
+        get: async function (key) {
+            const { data, error } = await db()
+                .from('parameters')
+                .select('value')
+                .eq('key', key)
+                .maybeSingle();
+            if (error) handleError('Parameters.get', error);
+            return data ? data.value : null;
+        },
+
+        set: async function (key, value) {
+            const { data, error } = await db()
+                .from('parameters')
+                .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+                .select()
+                .single();
+            if (error) handleError('Parameters.set', error);
+            return data;
+        },
+    };
+
+    // ----------------------------------------------------------
+    // FINANCE (Receitas e Despesas — tabela unificada)
+    // ----------------------------------------------------------
+    const Finance = {
         /**
-         * Busca pagamentos com nome do aluno, com filtros opcionais.
-         * @param {{ studentId?: string, month?: number, year?: number }} opts
+         * Busca registros financeiros com filtros opcionais.
+         * @param {{ type?: 'Receita'|'Despesa', studentId?: string, month?: number, year?: number }} opts
          */
         getAll: async function (opts = {}) {
             let query = db()
-                .from('payments')
+                .from('finance')
                 .select(`
                     id,
+                    type,
                     amount,
                     status,
                     due_date,
+                    description,
                     created_at,
                     student_id,
                     students ( full_name )
                 `)
                 .order('due_date', { ascending: false });
 
-            if (opts.studentId) {
-                query = query.eq('student_id', opts.studentId);
-            }
+            if (opts.type)      query = query.eq('type', opts.type);
+            if (opts.studentId) query = query.eq('student_id', opts.studentId);
 
             if (opts.month && opts.year) {
-                // Filtra pelo mês/ano da due_date
-                const startDate = `${opts.year}-${String(opts.month).padStart(2, '0')}-01`;
-                const endDate   = new Date(opts.year, opts.month, 0);
-                const endStr    = `${opts.year}-${String(opts.month).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-                query = query.gte('due_date', startDate).lte('due_date', endStr);
+                const y         = opts.year;
+                const m         = String(opts.month).padStart(2, '0');
+                const startDate = `${y}-${m}-01`;
+                const lastDay   = new Date(y, opts.month, 0).getDate();
+                const endDate   = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+                query = query.gte('due_date', startDate).lte('due_date', endDate);
             }
 
             const { data, error } = await query;
-            if (error) handleError('Payments.getAll', error);
+            if (error) handleError('Finance.getAll', error);
             return data;
         },
 
-        /**
-         * Cria um registro de pagamento.
-         * @param {{ student_id: string, amount: number, status: string, due_date: string }} payload
-         */
         create: async function (payload) {
             const { data, error } = await db()
-                .from('payments')
+                .from('finance')
                 .insert(payload)
                 .select(`
-                    id, amount, status, due_date, created_at, student_id,
+                    id, type, amount, status, due_date, description, created_at, student_id,
                     students ( full_name )
                 `)
                 .single();
-            if (error) handleError('Payments.create', error);
+            if (error) handleError('Finance.create', error);
             return data;
         },
 
-        /**
-         * Atualiza o status / valor de um pagamento.
-         */
         update: async function (id, payload) {
             const { data, error } = await db()
-                .from('payments')
+                .from('finance')
                 .update(payload)
                 .eq('id', id)
                 .select()
                 .single();
-            if (error) handleError('Payments.update', error);
+            if (error) handleError('Finance.update', error);
             return data;
         },
 
-        /**
-         * Remove um pagamento.
-         */
         delete: async function (id) {
             const { error } = await db()
-                .from('payments')
+                .from('finance')
                 .delete()
                 .eq('id', id);
-            if (error) handleError('Payments.delete', error);
+            if (error) handleError('Finance.delete', error);
         },
 
         /**
-         * Resumo financeiro de um mês/ano específico.
-         * Retorna { totalPago, totalPendente, totalAtrasado, totalGeral }
+         * Retorna map { studentId: status } do registro mais recente
+         * de Receita por aluno — usado na coluna Sit.Fin. da tela de Alunos.
          */
-        getSummary: async function (month, year) {
-            const payments = await Payments.getAll({ month, year });
-            const summary = { totalPago: 0, totalPendente: 0, totalAtrasado: 0, totalGeral: 0 };
-
-            payments.forEach(p => {
-                const val = parseFloat(p.amount) || 0;
-                summary.totalGeral += val;
-                if (p.status === 'Pago')      summary.totalPago      += val;
-                if (p.status === 'Pendente')  summary.totalPendente  += val;
-                if (p.status === 'Atrasado')  summary.totalAtrasado  += val;
+        getLatestStatusByStudent: async function () {
+            const { data, error } = await db()
+                .from('finance')
+                .select('student_id, status, due_date')
+                .eq('type', 'Receita')
+                .order('due_date', { ascending: false });
+            if (error) handleError('Finance.getLatestStatusByStudent', error);
+            const map = {};
+            (data || []).forEach(p => {
+                if (!map[p.student_id]) map[p.student_id] = p.status;
             });
+            return map;
+        },
 
-            return summary;
+        /**
+         * Fallback client-side: marca Pendente → Atrasado onde due_date < hoje.
+         * Complementa o pg_cron quando indisponível (plano free).
+         */
+        syncOverdue: async function () {
+            const today = new Date().toISOString().split('T')[0];
+            const { error } = await db()
+                .from('finance')
+                .update({ status: 'Atrasado' })
+                .eq('status', 'Pendente')
+                .lt('due_date', today);
+            if (error) console.warn('[API] Finance.syncOverdue:', error.message);
         },
     };
 
@@ -190,12 +209,7 @@
     // SCHEDULE
     // ----------------------------------------------------------
     const Schedule = {
-        /**
-         * Busca ou cria uma aula (slot) baseado no dia/hora.
-         * Usa upsert para garantir idempotência.
-         */
         getOrCreateClass: async function (dayOfWeek, startTime) {
-            // Tenta buscar primeiro
             const { data: existing, error: fetchErr } = await db()
                 .from('schedule_classes')
                 .select('id')
@@ -204,10 +218,8 @@
                 .maybeSingle();
 
             if (fetchErr) handleError('Schedule.getOrCreateClass', fetchErr);
-
             if (existing) return existing;
 
-            // Cria se não existir
             const { data, error } = await db()
                 .from('schedule_classes')
                 .insert({ day_of_week: dayOfWeek, start_time: startTime })
@@ -218,10 +230,6 @@
             return data;
         },
 
-        /**
-         * Busca todas as matrículas com info do aluno e do horário.
-         * Retorna um map: { "day_startTime": [ { enrollmentId, studentId, studentName } ] }
-         */
         getAllEnrollments: async function () {
             const { data, error } = await db()
                 .from('class_enrollments')
@@ -235,7 +243,6 @@
 
             if (error) handleError('Schedule.getAllEnrollments', error);
 
-            // Converte para map indexado por "day_startTime"
             const map = {};
             (data || []).forEach(enr => {
                 const sc = enr.schedule_classes;
@@ -253,9 +260,25 @@
             return map;
         },
 
-        /**
-         * Matricula um aluno em um slot (cria enrollment).
-         */
+        getAllEnrollmentsIndexedByStudent: async function () {
+            const { data, error } = await db()
+                .from('class_enrollments')
+                .select(`
+                    student_id,
+                    schedule_classes ( day_of_week, start_time )
+                `);
+            if (error) handleError('Schedule.getAllEnrollmentsIndexedByStudent', error);
+            const map = {};
+            (data || []).forEach(enr => {
+                const sc = enr.schedule_classes;
+                if (!sc) return;
+                const sid = enr.student_id;
+                if (!map[sid]) map[sid] = [];
+                map[sid].push({ day: sc.day_of_week, time: sc.start_time.substring(0, 5) });
+            });
+            return map;
+        },
+
         enroll: async function (scheduleClassId, studentId) {
             const { data, error } = await db()
                 .from('class_enrollments')
@@ -267,9 +290,6 @@
             return data;
         },
 
-        /**
-         * Remove uma matrícula pelo ID de enrollment.
-         */
         removeEnrollment: async function (enrollmentId) {
             const { error } = await db()
                 .from('class_enrollments')
@@ -285,7 +305,8 @@
     // ----------------------------------------------------------
     window.API = {
         Students,
-        Payments,
+        Parameters,
+        Finance,
         Schedule,
     };
 

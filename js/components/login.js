@@ -15,11 +15,7 @@
             screen.innerHTML = `
                 <div class="login-card">
                     <div class="login-brand">
-                        <div class="login-brand-icon">
-                            <i class="fa-solid fa-futbol"></i>
-                        </div>
-                        <h1>Football<strong>Lab</strong></h1>
-                        <p>Sistema de Gestão Esportiva</p>
+                        <h1><span class="brand-football">Football</span><span class="brand-lab">Lab</span></h1>
                     </div>
 
                     <form class="login-form" id="login-form" novalidate>

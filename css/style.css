@@ -4,11 +4,15 @@
 
 /* ---------- CSS Variables ---------- */
 :root {
-    --primary:        #10b981;
-    --primary-dark:   #059669;
-    --primary-light:  #34d399;
-    --primary-glow:   rgba(16, 185, 129, 0.20);
-    --accent:         #f59e0b;
+    --primary:        #3d8b1f;
+    --primary-dark:   #2d6b14;
+    --primary-light:  #5ab02e;
+    --primary-glow:   rgba(61, 139, 31, 0.20);
+    --accent:         #f5b800;
+
+    /* Cores da marca Football Lab */
+    --brand-green:    #3d8b1f;
+    --brand-yellow:   #f5b800;
 
     --bg-base:        #070d14;
     --bg-sidebar:     #0d1520;
@@ -170,16 +174,13 @@ input, select, textarea {
 }
 
 .login-brand h1 {
-    font-size: 1.7rem; font-weight: 800;
-    color: var(--text-primary);
-    letter-spacing: -0.5px;
+    font-size: 2.8rem; font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.1;
 }
 
-.login-brand h1 strong { color: var(--primary); }
-
-.login-brand p {
-    color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px;
-}
+.brand-football { color: var(--brand-green); }
+.brand-lab      { color: var(--brand-yellow); }
 
 .login-form { display: flex; flex-direction: column; gap: 18px; }
 
@@ -278,9 +279,10 @@ input, select, textarea {
 }
 
 .brand-name {
-    font-size: 1.05rem; font-weight: 600;
+    font-size: 1.35rem; font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap; overflow: hidden;
+    letter-spacing: -0.5px;
     transition: var(--transition);
 }
 
@@ -627,7 +629,53 @@ tbody tr:hover td { background: var(--bg-hover); color: var(--text-primary); }
     font-weight: 600;
 }
 
-.td-actions { width: 90px; }
+.td-actions  { width: 90px; }
+.td-schedule { min-width: 140px; }
+
+/* Schedule badges — usados na tabela e modal de alunos */
+.schedule-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: rgba(61, 139, 31, 0.15);
+    color: var(--brand-green);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 2px;
+    white-space: nowrap;
+}
+
+.schedule-badge-lg {
+    padding: 4px 12px;
+    font-size: 0.84rem;
+}
+
+.schedule-slots-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 44px;
+    align-items: center;
+}
+
+.form-input-readonly {
+    background: var(--bg-base) !important;
+    cursor: default;
+    color: var(--text-secondary) !important;
+}
+
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+}
 
 /* Empty state */
 .empty-state {
@@ -941,6 +989,77 @@ tbody tr:hover td { background: var(--bg-hover); color: var(--text-primary); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* ============================================================
+   DEPLOY INFO (sidebar footer)
+   ============================================================ */
+.deploy-info {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px 14px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    overflow: hidden;
+}
+
+.deploy-info i {
+    font-size: 0.65rem;
+    color: var(--primary);
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.deploy-info span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: var(--transition);
+}
+
+/* Oculta o texto quando sidebar está colapsada no desktop */
+.sidebar.collapsed .deploy-info span { opacity: 0; width: 0; overflow: hidden; }
+
+/* ============================================================
+   PARAMETERS CARD
+   ============================================================ */
+.params-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    max-width: 560px;
+}
+
+.params-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 24px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border);
+}
+
+.params-card-header i {
+    color: var(--brand-yellow);
+    font-size: 1rem;
+}
+
+.params-card-body {
+    padding: 24px;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
 
 /* ============================================================
    MOBILE TOPBAR

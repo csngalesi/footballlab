@@ -56,9 +56,11 @@
     // Roteamento de módulos
     // ----------------------------------------------------------
     const ROUTES = {
-        students: window.StudentsComponent,
-        finance:  window.FinanceComponent,
-        schedule: window.ScheduleComponent,
+        students:   window.StudentsComponent,
+        finance:    window.FinanceComponent,
+        expenses:   window.ExpensesComponent,
+        schedule:   window.ScheduleComponent,
+        parameters: window.ParametersComponent,
     };
 
     // ----------------------------------------------------------
@@ -121,6 +123,7 @@
             if (emailEl && user) emailEl.textContent = user.email || 'Usuário';
 
             App._setupSidebar();
+            App._loadDeployInfo();
             App.navigate('students');
         },
 
@@ -193,6 +196,35 @@
             const backdrop = document.getElementById('sidebar-backdrop');
             if (sidebar)  sidebar.classList.remove('mobile-open');
             if (backdrop) backdrop.classList.add('hidden');
+        },
+
+        // ----------------------------------------------------------
+        // Deploy Info
+        // ----------------------------------------------------------
+        _loadDeployInfo: function () {
+            fetch('/version.json?_=' + Date.now())
+                .then(function (r) {
+                    if (!r.ok) throw new Error('not found');
+                    return r.json();
+                })
+                .then(function (data) {
+                    if (!data.deployedAt) return;
+                    const dt = new Date(data.deployedAt);
+                    const formatted = dt.toLocaleString('pt-BR', {
+                        day:    '2-digit',
+                        month:  '2-digit',
+                        year:   'numeric',
+                        hour:   '2-digit',
+                        minute: '2-digit',
+                    });
+                    const el = document.getElementById('deploy-time');
+                    if (el) el.textContent = 'Deploy: ' + formatted;
+                })
+                .catch(function () {
+                    // Em dev local não há version.json — silencia o erro
+                    const el = document.getElementById('deploy-time');
+                    if (el) el.textContent = 'Dev local';
+                });
         },
 
         // ----------------------------------------------------------

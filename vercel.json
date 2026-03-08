@@ -1,0 +1,5 @@
+{
+  "buildCommand": "node -e \"const fs=require('fs');fs.writeFileSync('version.json',JSON.stringify({deployedAt:new Date().toISOString()}));\"",
+  "outputDirectory": ".",
+  "framework": null
+}
