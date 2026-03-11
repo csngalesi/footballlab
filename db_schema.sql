@@ -123,10 +123,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-    v_fee      NUMERIC;
-    v_days     INTEGER;
-    v_due_date DATE;
-    r          RECORD;
+    v_fee  NUMERIC;
+    v_days INTEGER;
+    r      RECORD;
 BEGIN
     SELECT COALESCE(value::NUMERIC, 0)
       INTO v_fee
@@ -138,12 +137,11 @@ BEGIN
       FROM public.parameters
      WHERE key = 'days_to_due';
 
-    v_due_date := CURRENT_DATE + v_days;
-
+    -- Todos os alunos cujo billing_day já chegou (ou passou) este mês
     FOR r IN
-        SELECT id
+        SELECT id, billing_day
           FROM public.students
-         WHERE billing_day = EXTRACT(DAY FROM CURRENT_DATE)::INTEGER
+         WHERE billing_day <= EXTRACT(DAY FROM CURRENT_DATE)::INTEGER
     LOOP
         IF NOT EXISTS (
             SELECT 1
@@ -154,7 +152,16 @@ BEGIN
                AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)
         ) THEN
             INSERT INTO public.finance (type, student_id, amount, status, due_date)
-            VALUES ('Receita', r.id, v_fee, 'Pendente', v_due_date);
+            VALUES (
+                'Receita',
+                r.id,
+                v_fee,
+                'Pendente',
+                (DATE_TRUNC('month', CURRENT_DATE)
+                    + ((r.billing_day - 1) || ' days')::INTERVAL
+                    + (v_days           || ' days')::INTERVAL
+                )::DATE
+            );
         END IF;
     END LOOP;
 END;
