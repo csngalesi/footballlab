@@ -89,7 +89,7 @@
         _loadStudents: async function () {
             try {
                 [_students, _enrollmentMap, _finStatusMap] = await Promise.all([
-                    window.API.Students.getAll(),
+                    window.API.Students.getAll('aluno'),
                     window.API.Schedule.getAllEnrollmentsIndexedByStudent(),
                     window.API.Finance.getLatestStatusByStudent(),
                 ]);
@@ -470,7 +470,7 @@
 
         refreshCache: async function () {
             try {
-                _students = await window.API.Students.getAll();
+                _students = await window.API.Students.getAll('aluno');
             } catch (_) {}
         },
     };

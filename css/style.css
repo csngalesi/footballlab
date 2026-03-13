@@ -508,6 +508,22 @@ input, select, textarea {
 }
 .btn-secondary:hover { border-color: var(--border-light); background: #1d2d42; }
 
+.btn-success {
+    background: rgba(16,185,129,0.12);
+    color: var(--primary);
+    border-color: rgba(16,185,129,0.3);
+}
+.btn-success:hover {
+    background: rgba(16,185,129,0.22);
+    border-color: rgba(16,185,129,0.55);
+    transform: translateY(-1px);
+}
+
+.btn-sm {
+    padding: 5px 11px;
+    font-size: 0.78rem;
+}
+
 .btn-danger {
     background: rgba(239,68,68,0.1);
     color: var(--danger);

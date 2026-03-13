@@ -17,12 +17,24 @@
     // STUDENTS
     // ----------------------------------------------------------
     const Students = {
-        getAll: async function () {
+        getAll: async function (type = 'aluno') {
             const { data, error } = await db()
                 .from('students')
                 .select('*')
+                .eq('student_type', type)
                 .order('full_name');
             if (error) handleError('Students.getAll', error);
+            return data;
+        },
+
+        promote: async function (id) {
+            const { data, error } = await db()
+                .from('students')
+                .update({ student_type: 'aluno' })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) handleError('Students.promote', error);
             return data;
         },
 

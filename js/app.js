@@ -56,11 +56,12 @@
     // Roteamento de módulos
     // ----------------------------------------------------------
     const ROUTES = {
-        students:   window.StudentsComponent,
-        finance:    window.FinanceComponent,
-        expenses:   window.ExpensesComponent,
-        schedule:   window.ScheduleComponent,
-        parameters: window.ParametersComponent,
+        students:      window.StudentsComponent,
+        'pre-cadastro': window.PreCadastroComponent,
+        finance:       window.FinanceComponent,
+        expenses:      window.ExpensesComponent,
+        schedule:      window.ScheduleComponent,
+        parameters:    window.ParametersComponent,
     };
 
     // ----------------------------------------------------------
